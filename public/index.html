@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>City Brief — Weather</title>
+    <meta name="description" content="Fast, clean weather for any city." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-weather="clear" data-period="day">
+    <div class="app">
+      <header class="topbar">
+        <div
+          class="search"
+          role="combobox"
+          aria-expanded="false"
+          aria-owns="suggestions"
+          aria-haspopup="listbox"
+        >
+          <svg
+            class="search-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <circle
+              cx="11"
+              cy="11"
+              r="7"
+              stroke="currentColor"
+              stroke-width="2"
+            />
+            <path
+              d="M20 20L16.65 16.65"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+          <input
+            id="search-input"
+            type="text"
+            placeholder="Search a city..."
+            autocomplete="off"
+            aria-label="Search for a city"
+          />
+          <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
+        </div>
+        <button
+          id="locate-btn"
+          class="locate-btn"
+          aria-label="Use my current location"
+          title="Use my location"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <circle
+              cx="12"
+              cy="12"
+              r="3"
+              stroke="currentColor"
+              stroke-width="2"
+            />
+            <path
+              d="M12 2V5M12 19V22M2 12H5M19 12H22"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+      </header>
+
+      <main id="main" aria-live="polite">
+        <section id="empty-state" class="empty-state">
+          <p class="eyebrow">No location yet</p>
+          <h1>Search a city, or use your location</h1>
+          <p class="empty-hint">
+            Try "Tokyo", "Paris", or tap the locate button above.
+          </p>
+        </section>
+
+        <section id="loading-state" class="loading-state" hidden>
+          <div class="skeleton skeleton-hero"></div>
+          <div class="skeleton skeleton-row"></div>
+          <div class="skeleton skeleton-row"></div>
+        </section>
+
+        <section id="error-state" class="error-state" hidden>
+          <p class="eyebrow">Something went wrong</p>
+          <h1 id="error-message">Can't reach the weather service right now.</h1>
+          <button id="retry-btn" class="retry-btn">Try again</button>
+        </section>
+
+        <section id="weather-view" class="weather-view" hidden>
+          <div class="hero">
+            <p class="eyebrow" id="location-name">—</p>
+            <div class="hero-main">
+              <span
+                class="weather-icon"
+                id="hero-icon"
+                aria-hidden="true"
+              ></span>
+              <span class="temp" id="hero-temp">—°</span>
+            </div>
+            <p class="condition" id="hero-condition">—</p>
+            <p class="hero-sub" id="hero-suggestion">—</p>
+            <div class="stat-row">
+              <span><strong id="stat-high">—°</strong> High</span>
+              <span><strong id="stat-low">—°</strong> Low</span>
+              <span><strong id="stat-wind">—</strong> Wind</span>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h2 class="panel-title">Hourly</h2>
+            <div class="hourly-strip" id="hourly-strip"></div>
+          </div>
+
+          <div class="panel">
+            <h2 class="panel-title">7-Day Forecast</h2>
+            <ul class="daily-list" id="daily-list"></ul>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <span id="offline-badge" class="offline-badge" hidden
+          >You're offline — showing last result</span
+        >
+      </footer>
+    </div>
+
+    <script src="script.js" defer></script>
+  </body>
+</html>
