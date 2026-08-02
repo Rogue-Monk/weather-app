@@ -13,6 +13,13 @@
   const API_KEY = "cbb3143c5782cdc9c512d7374493be13d7ad867760de2573"; // must match .env
   const FETCH_TIMEOUT_MS = 8000;
   const CACHE_KEY = "city-brief:last-result";
+  const UNIT_CACHE_KEY = "city-brief:unit";
+
+  // ---------------------------------------------------------------------
+  // State & Unit Preferences
+  // ---------------------------------------------------------------------
+  let currentUnit = localStorage.getItem(UNIT_CACHE_KEY) || "C";
+  let activeWeatherData = null;
 
   // ---------------------------------------------------------------------
   // DOM refs
@@ -22,6 +29,9 @@
   const searchInput = $("search-input");
   const suggestionsEl = $("suggestions");
   const locateBtn = $("locate-btn");
+  const unitToggle = $("unit-toggle");
+  const unitCLabel = $("unit-c-label");
+  const unitFLabel = $("unit-f-label");
   const retryBtn = $("retry-btn");
   const offlineBadge = $("offline-badge");
 
@@ -46,6 +56,44 @@
   const hourlyStrip = $("hourly-strip");
   const dailyList = $("daily-list");
   const errorMessage = $("error-message");
+
+  // ---------------------------------------------------------------------
+  // Unit conversion helper
+  // ---------------------------------------------------------------------
+  function formatTemp(tempC) {
+    if (tempC === null || tempC === undefined || isNaN(tempC)) return "—°";
+    if (currentUnit === "F") {
+      const tempF = Math.round((tempC * 9) / 5 + 32);
+      return `${tempF}°`;
+    }
+    return `${Math.round(tempC)}°`;
+  }
+
+  function updateUnitToggleUI() {
+    if (unitCLabel && unitFLabel) {
+      if (currentUnit === "F") {
+        unitCLabel.classList.remove("active");
+        unitFLabel.classList.add("active");
+      } else {
+        unitCLabel.classList.add("active");
+        unitFLabel.classList.remove("active");
+      }
+    }
+  }
+
+  if (unitToggle) {
+    unitToggle.addEventListener("click", () => {
+      currentUnit = currentUnit === "C" ? "F" : "C";
+      localStorage.setItem(UNIT_CACHE_KEY, currentUnit);
+      updateUnitToggleUI();
+      if (activeWeatherData) {
+        render(activeWeatherData);
+      }
+    });
+  }
+
+  // Initial unit UI update
+  updateUnitToggleUI();
 
   // ---------------------------------------------------------------------
   // Icon mapping (icon key + day/night -> emoji)
@@ -114,6 +162,7 @@
   // Rendering
   // ---------------------------------------------------------------------
   function render(data) {
+    activeWeatherData = data;
     const { location, current, hourly, daily } = data;
     const isDay = current.is_day;
 
@@ -122,11 +171,11 @@
 
     heroEls.location.textContent = location.name;
     heroEls.icon.textContent = iconFor(current.icon, isDay);
-    heroEls.temp.textContent = `${Math.round(current.temperature_c)}°`;
+    heroEls.temp.textContent = formatTemp(current.temperature_c);
     heroEls.condition.textContent = current.description;
     heroEls.suggestion.textContent = current.suggestion;
-    heroEls.high.textContent = `${Math.round(current.high_c)}°`;
-    heroEls.low.textContent = `${Math.round(current.low_c)}°`;
+    heroEls.high.textContent = formatTemp(current.high_c);
+    heroEls.low.textContent = formatTemp(current.low_c);
     heroEls.wind.textContent = `${Math.round(current.windspeed_kmh)} km/h`;
 
     hourlyStrip.innerHTML = "";
@@ -145,7 +194,7 @@
       el.innerHTML = `
         <span class="hour-label">${label}</span>
         <span class="hour-icon">${iconFor(h.icon, true)}</span>
-        <span class="hour-temp">${Math.round(h.temperature_c)}°</span>
+        <span class="hour-temp">${formatTemp(h.temperature_c)}</span>
       `;
       hourlyStrip.appendChild(el);
     });
@@ -161,7 +210,7 @@
         <span class="day-name">${dayName}</span>
         <span class="day-icon">${iconFor(d.icon, true)}</span>
         <span class="day-desc">${d.description}</span>
-        <span class="day-temps"><span class="high">${Math.round(d.high_c)}°</span><span class="low">${Math.round(d.low_c)}°</span></span>
+        <span class="day-temps"><span class="high">${formatTemp(d.high_c)}</span><span class="low">${formatTemp(d.low_c)}</span></span>
       `;
       dailyList.appendChild(el);
     });

@@ -131,6 +131,10 @@ button {
   border-radius: var(--radius-sm);
 }
 
+[hidden] {
+  display: none !important;
+}
+
 /* ==========================================================================
    Layout shell
    ========================================================================== */
@@ -258,6 +262,141 @@ button {
   to {
     transform: rotate(360deg);
   }
+}
+
+.unit-toggle {
+  height: 44px;
+  padding: 0 14px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-radius: var(--radius-pill);
+  color: var(--ink);
+  font-size: 14px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  transition:
+    transform 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+
+.unit-toggle:hover {
+  background: var(--glass-bg-strong);
+}
+
+.unit-toggle:active {
+  transform: scale(0.94);
+}
+
+.unit-opt {
+  opacity: 0.45;
+  transition: opacity 0.2s var(--ease), color 0.2s var(--ease);
+}
+
+.unit-opt.active {
+  opacity: 1;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.unit-divider {
+  opacity: 0.3;
+  font-size: 12px;
+}
+
+.theme-toggle {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-radius: 50%;
+  color: var(--ink);
+  transition:
+    transform 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+
+.theme-toggle:hover {
+  background: var(--glass-bg-strong);
+}
+
+.theme-toggle:active {
+  transform: scale(0.92);
+}
+
+.theme-icon {
+  transition: transform 0.3s var(--ease);
+}
+
+.theme-toggle:hover .theme-icon {
+  transform: rotate(25deg);
+}
+
+/* ==========================================================================
+   Dark Mode & Light Mode Theme Overrides
+   ========================================================================== */
+body[data-theme="dark"] {
+  --ink: #f1f5f9;
+  --ink-muted: #94a3b8;
+  --ink-faint: rgba(241, 245, 249, 0.45);
+
+  --glass-bg: rgba(12, 18, 30, 0.55);
+  --glass-bg-strong: rgba(18, 26, 44, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.12);
+
+  --shadow-soft: 0 16px 48px rgba(0, 0, 0, 0.6);
+}
+
+body[data-theme="dark"][data-weather="clear"][data-period="day"] {
+  --sky-a: #0e1a2e;
+  --sky-b: #1c2b42;
+}
+body[data-theme="dark"][data-weather="clear"][data-period="night"] {
+  --sky-a: #050814;
+  --sky-b: #0f172a;
+}
+body[data-theme="dark"][data-weather="cloudy"][data-period="day"],
+body[data-theme="dark"][data-weather="cloudy"][data-period="night"] {
+  --sky-a: #0d1117;
+  --sky-b: #161b26;
+}
+body[data-theme="dark"][data-weather="rain"][data-period="day"],
+body[data-theme="dark"][data-weather="rain"][data-period="night"] {
+  --sky-a: #090c12;
+  --sky-b: #131924;
+}
+body[data-theme="dark"][data-weather="storm"][data-period="day"],
+body[data-theme="dark"][data-weather="storm"][data-period="night"] {
+  --sky-a: #04050a;
+  --sky-b: #0d101a;
+}
+body[data-theme="dark"][data-weather="snow"][data-period="day"],
+body[data-theme="dark"][data-weather="snow"][data-period="night"] {
+  --sky-a: #111827;
+  --sky-b: #1f2937;
+}
+
+body[data-theme="light"] {
+  --ink: #0f172a;
+  --ink-muted: #475569;
+  --ink-faint: rgba(15, 23, 42, 0.55);
+
+  --glass-bg: rgba(255, 255, 255, 0.45);
+  --glass-bg-strong: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.5);
+
+  --shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.08);
 }
 
 /* ==========================================================================
@@ -443,16 +582,35 @@ button {
   display: flex;
   gap: 20px;
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding-bottom: 12px;
+  margin-bottom: -4px;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
   scrollbar-width: thin;
+  scrollbar-color: var(--accent) rgba(0, 0, 0, 0.15);
 }
 
 .hourly-strip::-webkit-scrollbar {
-  height: 4px;
+  height: 6px;
 }
+
+.hourly-strip::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-pill);
+  margin: 0 4px;
+}
+
 .hourly-strip::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.35), var(--accent));
+  border-radius: var(--radius-pill);
+  box-shadow: 0 0 10px rgba(255, 176, 32, 0.35);
+  transition: background 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+
+.hourly-strip::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, var(--accent), var(--danger));
+  box-shadow: 0 0 14px rgba(255, 176, 32, 0.8);
+  cursor: grab;
 }
 
 .hour-item {
