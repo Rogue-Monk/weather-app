@@ -4,12 +4,11 @@
   // ---------------------------------------------------------------------
   // Config
   // ---------------------------------------------------------------------
-  // This key gates the API against random bots hitting it directly — it is
-  // NOT a secret once shipped to a browser (anyone can read it in devtools'
-  // Network tab). Real protection for a public-facing app like this comes
-  // from the rate limiter on the server, not from hiding this string. If
-  // you later want this to be a real secret, move weather calls behind a
-  // session cookie instead of a static bearer token.
+  // API_BASE configuration:
+  // - Leave empty ("") for local Express development (`node server.js`) or automatic fallback.
+  // - Set to your deployed backend URL (e.g. "https://your-backend.onrender.com") if hosting
+  //   the Express server on a separate cloud provider.
+  const API_BASE = "";
   const API_KEY = "cbb3143c5782cdc9c512d7374493be13d7ad867760de2573"; // must match .env
   const FETCH_TIMEOUT_MS = 8000;
   const CACHE_KEY = "city-brief:last-result";
@@ -176,21 +175,185 @@
   };
 
   // ---------------------------------------------------------------------
+  // Client-side fallback for static hosts (e.g. GitHub Pages)
+  // When running on GitHub Pages without a deployed Express server, GitHub Pages
+  // returns 404 for `/api/...`. This fallback queries Open-Meteo APIs directly.
+  // ---------------------------------------------------------------------
+  const WEATHER_CODES = {
+    0: { description: "Clear sky", icon: "clear", category: "clear" },
+    1: { description: "Mostly clear", icon: "partly-cloudy", category: "clear" },
+    2: { description: "Partly cloudy", icon: "partly-cloudy", category: "cloudy" },
+    3: { description: "Overcast", icon: "cloudy", category: "cloudy" },
+    45: { description: "Fog", icon: "fog", category: "fog" },
+    48: { description: "Depositing rime fog", icon: "fog", category: "fog" },
+    51: { description: "Light drizzle", icon: "drizzle", category: "rain" },
+    53: { description: "Moderate drizzle", icon: "drizzle", category: "rain" },
+    55: { description: "Dense drizzle", icon: "drizzle", category: "rain" },
+    56: { description: "Light freezing drizzle", icon: "drizzle", category: "rain" },
+    57: { description: "Dense freezing drizzle", icon: "drizzle", category: "rain" },
+    61: { description: "Slight rain", icon: "rain", category: "rain" },
+    63: { description: "Moderate rain", icon: "rain", category: "rain" },
+    65: { description: "Heavy rain", icon: "rain", category: "rain" },
+    66: { description: "Light freezing rain", icon: "rain", category: "rain" },
+    67: { description: "Heavy freezing rain", icon: "rain", category: "rain" },
+    71: { description: "Slight snow", icon: "snow", category: "snow" },
+    73: { description: "Moderate snow", icon: "snow", category: "snow" },
+    75: { description: "Heavy snow", icon: "snow", category: "snow" },
+    77: { description: "Snow grains", icon: "snow", category: "snow" },
+    80: { description: "Slight rain showers", icon: "rain", category: "rain" },
+    81: { description: "Moderate rain showers", icon: "rain", category: "rain" },
+    82: { description: "Violent rain showers", icon: "rain", category: "rain" },
+    85: { description: "Slight snow showers", icon: "snow", category: "snow" },
+    86: { description: "Heavy snow showers", icon: "snow", category: "snow" },
+    95: { description: "Thunderstorm", icon: "storm", category: "storm" },
+    96: { description: "Thunderstorm with light hail", icon: "storm", category: "storm" },
+    99: { description: "Thunderstorm with heavy hail", icon: "storm", category: "storm" },
+  };
+
+  function describeWeatherCode(code) {
+    return (
+      WEATHER_CODES[code] || {
+        description: "Unknown",
+        icon: "unknown",
+        category: "cloudy",
+      }
+    );
+  }
+
+  function clothingSuggestion(tempC, category) {
+    if (category === "storm") return "Stay in if you can — thunderstorm conditions";
+    if (category === "snow") return "Bundle up, snow is falling";
+    if (category === "rain") return "Grab an umbrella, it's wet out there";
+    if (tempC < 5) return "Heavy coat weather";
+    if (tempC < 15) return "A jacket will do";
+    if (tempC < 25) return "Light layers are enough";
+    return "It's shorts weather";
+  }
+
+  async function fallbackDirectOpenMeteo(path) {
+    const dummyOrigin = "http://localhost";
+    const urlObj = new URL(path, dummyOrigin);
+
+    if (urlObj.pathname.endsWith("/geocode")) {
+      const q = (urlObj.searchParams.get("q") || "").trim();
+      if (q.length < 2) return { results: [] };
+      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=5&language=en&format=json`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Location service unavailable");
+      const data = await res.json();
+      const results = (data.results || []).map((r) => ({
+        name: r.name,
+        country: r.country,
+        admin1: r.admin1 || null,
+        lat: r.latitude,
+        lon: r.longitude,
+      }));
+      return { results };
+    }
+
+    if (urlObj.pathname.endsWith("/weather")) {
+      const lat = parseFloat(urlObj.searchParams.get("lat"));
+      const lon = parseFloat(urlObj.searchParams.get("lon"));
+      const name = urlObj.searchParams.get("name") || "Selected location";
+
+      const params = new URLSearchParams({
+        latitude: lat,
+        longitude: lon,
+        current_weather: "true",
+        hourly: "temperature_2m,weathercode",
+        daily: "weathercode,temperature_2m_max,temperature_2m_min",
+        timezone: "auto",
+        forecast_days: "7",
+      });
+
+      const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`);
+      if (!res.ok) throw new Error("Weather service unavailable");
+      const data = await res.json();
+
+      if (!data.current_weather) throw new Error("Unexpected response from weather service");
+
+      const current = data.current_weather;
+      const currentInfo = describeWeatherCode(current.weathercode);
+      const nowHour = new Date(current.time).getHours();
+      const isDaytime = current.is_day === 1 || (nowHour >= 6 && nowHour < 19);
+
+      const nowIso = current.time;
+      const startIdx = Math.max(0, data.hourly.time.findIndex((t) => t >= nowIso));
+      const hourly = data.hourly.time.slice(startIdx, startIdx + 12).map((t, i) => {
+        const idx = startIdx + i;
+        const info = describeWeatherCode(data.hourly.weathercode[idx]);
+        return {
+          time: t,
+          temperature_c: data.hourly.temperature_2m[idx],
+          icon: info.icon,
+        };
+      });
+
+      const daily = data.daily.time.map((t, idx) => {
+        const info = describeWeatherCode(data.daily.weathercode[idx]);
+        return {
+          date: t,
+          high_c: data.daily.temperature_2m_max[idx],
+          low_c: data.daily.temperature_2m_min[idx],
+          icon: info.icon,
+          description: info.description,
+        };
+      });
+
+      return {
+        location: { name, lat, lon },
+        current: {
+          temperature_c: current.temperature,
+          windspeed_kmh: current.windspeed,
+          description: currentInfo.description,
+          icon: currentInfo.icon,
+          is_day: isDaytime,
+          suggestion: clothingSuggestion(current.temperature, currentInfo.category),
+          high_c: data.daily.temperature_2m_max[0],
+          low_c: data.daily.temperature_2m_min[0],
+        },
+        hourly,
+        daily,
+      };
+    }
+
+    throw new Error(`Endpoint ${path} not found`);
+  }
+
+  // ---------------------------------------------------------------------
   // Fetch helper with timeout + auth header baked in
   // ---------------------------------------------------------------------
   async function apiFetch(path) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    const targetUrl = API_BASE ? `${API_BASE.replace(/\/$/, "")}${path}` : path;
+
     try {
-      const res = await fetch(path, {
+      const res = await fetch(targetUrl, {
         headers: { Authorization: `Bearer ${API_KEY}` },
         signal: controller.signal,
       });
+
+      // If hosting statically (GitHub Pages) without Express running at targetUrl, 404 occurs.
+      if (res.status === 404 && !API_BASE) {
+        console.warn(`[City Brief] Backend route ${path} returned 404. Falling back to direct Open-Meteo client API.`);
+        return await fallbackDirectOpenMeteo(path);
+      }
+
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(body.error || `Request failed (${res.status})`);
       }
       return body;
+    } catch (err) {
+      if (!API_BASE && err.name !== "AbortError") {
+        try {
+          return await fallbackDirectOpenMeteo(path);
+        } catch (fallbackErr) {
+          throw err;
+        }
+      }
+      throw err;
     } finally {
       clearTimeout(timeout);
     }
