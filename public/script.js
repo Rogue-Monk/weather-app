@@ -14,11 +14,13 @@
   const FETCH_TIMEOUT_MS = 8000;
   const CACHE_KEY = "city-brief:last-result";
   const UNIT_CACHE_KEY = "city-brief:unit";
+  const THEME_CACHE_KEY = "city-brief:theme";
 
   // ---------------------------------------------------------------------
-  // State & Unit Preferences
+  // State & Preferences
   // ---------------------------------------------------------------------
   let currentUnit = localStorage.getItem(UNIT_CACHE_KEY) || "C";
+  let currentTheme = localStorage.getItem(THEME_CACHE_KEY) || "auto"; // "auto", "dark", "light"
   let activeWeatherData = null;
 
   // ---------------------------------------------------------------------
@@ -32,6 +34,7 @@
   const unitToggle = $("unit-toggle");
   const unitCLabel = $("unit-c-label");
   const unitFLabel = $("unit-f-label");
+  const themeToggle = $("theme-toggle");
   const retryBtn = $("retry-btn");
   const offlineBadge = $("offline-badge");
 
@@ -56,6 +59,50 @@
   const hourlyStrip = $("hourly-strip");
   const dailyList = $("daily-list");
   const errorMessage = $("error-message");
+
+  // ---------------------------------------------------------------------
+  // Theme Switcher Logic
+  // ---------------------------------------------------------------------
+  function applyTheme(theme) {
+    currentTheme = theme;
+    localStorage.setItem(THEME_CACHE_KEY, theme);
+
+    const sunIcon = themeToggle ? themeToggle.querySelector(".theme-icon-sun") : null;
+    const moonIcon = themeToggle ? themeToggle.querySelector(".theme-icon-moon") : null;
+
+    if (theme === "dark") {
+      document.body.dataset.theme = "dark";
+      if (sunIcon) sunIcon.hidden = true;
+      if (moonIcon) moonIcon.hidden = false;
+      if (themeToggle) themeToggle.title = "Theme: Dark Mode (click to switch to Light)";
+    } else if (theme === "light") {
+      document.body.dataset.theme = "light";
+      if (sunIcon) sunIcon.hidden = false;
+      if (moonIcon) moonIcon.hidden = true;
+      if (themeToggle) themeToggle.title = "Theme: Light Mode (click to switch to Auto)";
+    } else {
+      // Auto theme: remove data-theme so weather sky gradient takes full effect
+      delete document.body.dataset.theme;
+      if (sunIcon) sunIcon.hidden = false;
+      if (moonIcon) moonIcon.hidden = true;
+      if (themeToggle) themeToggle.title = "Theme: Weather Sky (click to switch to Dark)";
+    }
+  }
+
+  if (themeToggle) {
+    themeToggle.addEventListener("click", () => {
+      if (currentTheme === "auto" || !currentTheme) {
+        applyTheme("dark");
+      } else if (currentTheme === "dark") {
+        applyTheme("light");
+      } else {
+        applyTheme("auto");
+      }
+    });
+  }
+
+  // Apply initial theme
+  applyTheme(currentTheme);
 
   // ---------------------------------------------------------------------
   // Unit conversion helper
