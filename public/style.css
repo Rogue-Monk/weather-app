@@ -668,15 +668,26 @@ body[data-theme="light"] {
 
 .hero {
   text-align: center;
-  padding: 36px 12px 28px;
+  padding: 28px 20px 24px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .hero-main {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   line-height: 1;
+  margin: 10px 0 6px;
 }
 
 .weather-icon {
@@ -687,7 +698,7 @@ body[data-theme="light"] {
 .temp {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(84px, 26vw, 140px);
+  font-size: clamp(84px, 26vw, 130px);
   letter-spacing: -0.03em;
 }
 
@@ -701,36 +712,56 @@ body[data-theme="light"] {
 .hero-sub {
   color: var(--ink-muted);
   font-size: 14px;
-  margin: 0 0 18px;
+  margin: 0 0 14px;
 }
 
 .stat-row {
-  display: flex;
-  justify-content: center;
-  gap: 22px;
-  font-size: 13px;
-  color: var(--ink-muted);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding-top: 18px;
+  margin-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.stat-row strong {
-  display: block;
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm);
+}
+
+.stat-item strong {
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* ==========================================================================
-   Panels — hourly + daily
+   Panels — hourly + daily forecast cards
    ========================================================================== */
 .panel {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border-radius: var(--radius-lg);
-  padding: 18px;
+  padding: 20px;
   margin-bottom: 16px;
+  box-shadow: var(--shadow-soft);
 }
 
 .panel-title {
@@ -745,7 +776,7 @@ body[data-theme="light"] {
 
 .hourly-strip {
   display: flex;
-  gap: 20px;
+  gap: 12px;
   overflow-x: auto;
   padding-bottom: 12px;
   margin-bottom: -4px;
@@ -785,7 +816,18 @@ body[data-theme="light"] {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  min-width: 44px;
+  min-width: 62px;
+  padding: 10px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  transition: transform 0.2s var(--ease), background 0.2s var(--ease);
+  scroll-snap-align: start;
+}
+
+.hour-item:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .hour-item .hour-label {
@@ -809,12 +851,18 @@ body[data-theme="light"] {
 
 .daily-list li {
   display: grid;
-  grid-template-columns: 72px 32px 1fr auto;
+  grid-template-columns: 84px 36px 1fr 90px;
   align-items: center;
   gap: 12px;
-  padding: 10px 4px;
+  padding: 11px 8px;
   font-size: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  transition: background 0.2s var(--ease);
+}
+
+.daily-list li:hover {
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .daily-list li:first-child {
@@ -822,22 +870,34 @@ body[data-theme="light"] {
 }
 
 .day-name {
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--ink);
 }
 .day-icon {
-  font-size: 18px;
+  font-size: 20px;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .day-desc {
   color: var(--ink-muted);
   font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .day-temps {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
   font-family: var(--font-display);
   font-weight: 600;
+  text-align: right;
+}
+.day-temps .high {
+  color: var(--ink);
 }
 .day-temps .low {
   color: var(--ink-faint);
@@ -900,19 +960,18 @@ body[data-theme="light"] {
 
   .weather-view {
     display: grid;
-    grid-template-columns: 400px 1fr;
+    grid-template-columns: 380px 1fr;
     gap: 28px;
-    align-items: start;
+    align-items: stretch;
   }
 
   .hero {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border-radius: var(--radius-lg);
-    padding: 44px 28px 36px;
+    margin-bottom: 0;
+    padding: 36px 24px 28px;
     box-shadow: var(--shadow-soft);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
   }
 
   .panels-column {
@@ -934,7 +993,7 @@ body[data-theme="light"] {
   }
 
   .hero {
-    padding: 40px 16px 32px;
+    padding: 32px 20px 24px;
   }
 
   .temp {
@@ -981,7 +1040,8 @@ body[data-theme="light"] {
   }
 
   .hero {
-    padding: 20px 6px 16px;
+    padding: 20px 14px 18px;
+    margin-bottom: 14px;
   }
 
   .hero-main {
@@ -998,15 +1058,16 @@ body[data-theme="light"] {
 
   .hero-sub {
     font-size: 13px;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
   }
 
   .stat-row {
-    gap: 12px;
+    gap: 6px;
     font-size: 12px;
+    padding-top: 14px;
   }
 
-  .stat-row strong {
+  .stat-item strong {
     font-size: 14px;
   }
 
@@ -1016,10 +1077,10 @@ body[data-theme="light"] {
   }
 
   .daily-list li {
-    grid-template-columns: 56px 26px 1fr auto;
+    grid-template-columns: 60px 28px 1fr 78px;
     gap: 8px;
     font-size: 13px;
-    padding: 8px 2px;
+    padding: 9px 4px;
   }
 
   .day-desc {
