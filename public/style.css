@@ -1,102 +1,96 @@
-/* ==========================================================================
-   Tokens
-   ========================================================================== */
 :root {
   --font-display: "Space Grotesk", sans-serif;
   --font-body: "Inter", sans-serif;
+  --font-mono: "Courier Prime", monospace;
 
   --ink: #f7f9fc;
-  --ink-muted: #b9c6da;
-  --ink-faint: rgba(247, 249, 252, 0.55);
+  --ink-muted: #c4d2e5;
+  --ink-faint: rgba(247, 249, 252, 0.6);
 
   --accent: #ffb020;
   --danger: #ff6b5c;
 
-  --glass-bg: rgba(255, 255, 255, 0.1);
-  --glass-bg-strong: rgba(255, 255, 255, 0.16);
-  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-bg: rgba(255, 250, 240, 0.11);
+  --glass-bg-strong: rgba(255, 250, 240, 0.18);
+  --glass-border: rgba(255, 245, 230, 0.22);
 
   --radius-lg: 28px;
   --radius-md: 18px;
   --radius-sm: 12px;
   --radius-pill: 999px;
 
-  --shadow-soft: 0 12px 40px rgba(8, 15, 30, 0.25);
+  --shadow-soft: 0 16px 40px rgba(12, 18, 30, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* ==========================================================================
-   Weather-driven sky backgrounds — the signature element.
-   Body carries data-weather + data-period; the gradient IS the forecast.
-   ========================================================================== */
-/* ==========================================================================
-   Weather-driven sky backgrounds — refined multi-stop gradients.
+   Weather-driven sky backgrounds — refined multi-stop vintage analog gradients.
    Body carries data-weather + data-period; the gradient IS the forecast.
    ========================================================================== */
 body[data-weather="clear"][data-period="day"] {
-  --sky-a: #1d70b8;
-  --sky-b: #3a9bdc;
-  --sky-c: #7cd8ff;
+  --sky-a: #1c61a2;
+  --sky-b: #328acc;
+  --sky-c: #74c7f0;
 }
 body[data-weather="clear"][data-period="night"] {
-  --sky-a: #060b1e;
-  --sky-b: #131c38;
-  --sky-c: #251e44;
+  --sky-a: #080d1f;
+  --sky-b: #151c36;
+  --sky-c: #2b2347;
 }
 body[data-weather="cloudy"][data-period="day"] {
-  --sky-a: #4b5d73;
-  --sky-b: #70849c;
-  --sky-c: #a3b5ca;
+  --sky-a: #4d5b6e;
+  --sky-b: #6e8096;
+  --sky-c: #a1b2c7;
 }
 body[data-weather="cloudy"][data-period="night"] {
-  --sky-a: #121622;
-  --sky-b: #222a3d;
-  --sky-c: #323b52;
+  --sky-a: #121624;
+  --sky-b: #202738;
+  --sky-c: #30384d;
 }
 body[data-weather="rain"][data-period="day"] {
-  --sky-a: #293848;
-  --sky-b: #3d5268;
-  --sky-c: #57738f;
+  --sky-a: #253342;
+  --sky-b: #384b5e;
+  --sky-c: #52687f;
 }
 body[data-weather="rain"][data-period="night"] {
-  --sky-a: #0d121c;
-  --sky-b: #192434;
-  --sky-c: #27374d;
+  --sky-a: #0c111a;
+  --sky-b: #172130;
+  --sky-c: #253447;
 }
 body[data-weather="storm"][data-period="day"] {
-  --sky-a: #1f1b2e;
-  --sky-b: #362f4b;
-  --sky-c: #52476b;
+  --sky-a: #1c182a;
+  --sky-b: #332b47;
+  --sky-c: #4f4266;
 }
 body[data-weather="storm"][data-period="night"] {
-  --sky-a: #06050c;
-  --sky-b: #140e26;
-  --sky-c: #291a45;
+  --sky-a: #05040a;
+  --sky-b: #120c22;
+  --sky-c: #261740;
 }
 body[data-weather="snow"][data-period="day"] {
-  --sky-a: #6b899e;
-  --sky-b: #9bb7cc;
-  --sky-c: #dde7ee;
+  --sky-a: #648296;
+  --sky-b: #94b1c7;
+  --sky-c: #d8e4ec;
 }
 body[data-weather="snow"][data-period="night"] {
-  --sky-a: #182333;
-  --sky-b: #2f4058;
-  --sky-c: #4a617c;
+  --sky-a: #16202f;
+  --sky-b: #2b3b52;
+  --sky-c: #455a75;
 }
 body[data-weather="fog"][data-period="day"] {
-  --sky-a: #5a6672;
-  --sky-b: #8593a0;
-  --sky-c: #b8c4cf;
+  --sky-a: #54606b;
+  --sky-b: #7f8d9a;
+  --sky-c: #b2beca;
 }
 body[data-weather="fog"][data-period="night"] {
-  --sky-a: #181d24;
-  --sky-b: #2b333d;
-  --sky-c: #444e59;
+  --sky-a: #161a21;
+  --sky-b: #272f38;
+  --sky-c: #3f4852;
 }
 
 /* ==========================================================================
-   Base
+   Base with Grainy Vintage Overlay & Vignette
    ========================================================================== */
 * {
   box-sizing: border-box;
@@ -112,13 +106,42 @@ body {
   font-family: var(--font-body);
   color: var(--ink);
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.18) 0%, transparent 65%),
+    radial-gradient(circle at 50% 0%, rgba(255, 235, 200, 0.22) 0%, transparent 65%),
     linear-gradient(160deg, var(--sky-a) 0%, var(--sky-b) 52%, var(--sky-c) 100%);
   background-size: 140% 140%;
   background-position: 0% 0%;
   transition: background 1.2s var(--ease);
   animation: driftSky 26s ease-in-out infinite alternate;
   min-height: 100vh;
+  position: relative;
+}
+
+/* Full-viewport SVG film grain noise overlay */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.26;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grainNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grainNoise)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* Vintage film vignette frame */
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9998;
+  background: radial-gradient(circle at center, transparent 40%, rgba(12, 16, 26, 0.3) 100%);
 }
 
 @keyframes driftSky {

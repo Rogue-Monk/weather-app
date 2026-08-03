@@ -66,25 +66,38 @@
     currentTheme = theme;
     localStorage.setItem(THEME_CACHE_KEY, theme);
 
+    const autoIcon = themeToggle ? themeToggle.querySelector(".theme-icon-auto") : null;
     const sunIcon = themeToggle ? themeToggle.querySelector(".theme-icon-sun") : null;
     const moonIcon = themeToggle ? themeToggle.querySelector(".theme-icon-moon") : null;
 
     if (theme === "dark") {
       document.body.dataset.theme = "dark";
+      if (autoIcon) autoIcon.hidden = true;
       if (sunIcon) sunIcon.hidden = true;
       if (moonIcon) moonIcon.hidden = false;
-      if (themeToggle) themeToggle.title = "Theme: Dark Mode (click to switch to Light)";
+      if (themeToggle) {
+        themeToggle.title = "Theme: Dark Mode — Click to switch to Light Mode";
+        themeToggle.setAttribute("aria-label", "Theme: Dark Mode. Click to switch to Light Mode");
+      }
     } else if (theme === "light") {
       document.body.dataset.theme = "light";
+      if (autoIcon) autoIcon.hidden = true;
       if (sunIcon) sunIcon.hidden = false;
       if (moonIcon) moonIcon.hidden = true;
-      if (themeToggle) themeToggle.title = "Theme: Light Mode (click to switch to Auto)";
+      if (themeToggle) {
+        themeToggle.title = "Theme: Light Mode — Click to switch to Weather Sky Mode";
+        themeToggle.setAttribute("aria-label", "Theme: Light Mode. Click to switch to Weather Sky Mode");
+      }
     } else {
       // Auto theme: remove data-theme so weather sky gradient takes full effect
       delete document.body.dataset.theme;
-      if (sunIcon) sunIcon.hidden = false;
+      if (autoIcon) autoIcon.hidden = false;
+      if (sunIcon) sunIcon.hidden = true;
       if (moonIcon) moonIcon.hidden = true;
-      if (themeToggle) themeToggle.title = "Theme: Weather Sky (click to switch to Dark)";
+      if (themeToggle) {
+        themeToggle.title = "Theme: Weather Sky (Auto) — Click to switch to Dark Mode";
+        themeToggle.setAttribute("aria-label", "Theme: Weather Sky Auto Mode. Click to switch to Dark Mode");
+      }
     }
   }
 
@@ -104,7 +117,7 @@
   applyTheme(currentTheme);
 
   // ---------------------------------------------------------------------
-  // Unit conversion helper
+  // Unit conversion helpers
   // ---------------------------------------------------------------------
   function formatTemp(tempC) {
     if (tempC === null || tempC === undefined || isNaN(tempC)) return "—°";
@@ -113,6 +126,15 @@
       return `${tempF}°`;
     }
     return `${Math.round(tempC)}°`;
+  }
+
+  function formatWind(speedKmh) {
+    if (speedKmh === null || speedKmh === undefined || isNaN(speedKmh)) return "—";
+    if (currentUnit === "F") {
+      const mph = Math.round(speedKmh * 0.621371);
+      return `${mph} mph`;
+    }
+    return `${Math.round(speedKmh)} km/h`;
   }
 
   function updateUnitToggleUI() {
@@ -386,7 +408,7 @@
     heroEls.suggestion.textContent = current.suggestion;
     heroEls.high.textContent = formatTemp(current.high_c);
     heroEls.low.textContent = formatTemp(current.low_c);
-    heroEls.wind.textContent = `${Math.round(current.windspeed_kmh)} km/h`;
+    heroEls.wind.textContent = formatWind(current.windspeed_kmh);
 
     hourlyStrip.innerHTML = "";
     hourly.forEach((h) => {
@@ -480,6 +502,7 @@
   // ---------------------------------------------------------------------
   // Search + autocomplete
   // ---------------------------------------------------------------------
+  const searchContainer = document.querySelector(".search");
   let debounceTimer = null;
   let activeIndex = -1;
   let currentResults = [];
@@ -488,6 +511,7 @@
     suggestionsEl.hidden = true;
     suggestionsEl.innerHTML = "";
     activeIndex = -1;
+    if (searchContainer) searchContainer.setAttribute("aria-expanded", "false");
   }
 
   function renderSuggestions(results) {
@@ -499,7 +523,7 @@
     suggestionsEl.innerHTML = results
       .map(
         (r, i) => `
-        <li role="option" data-index="${i}">
+        <li role="option" id="opt-${i}" data-index="${i}" aria-selected="false">
           <span>${r.name}</span>
           <span class="place-region">${[r.admin1, r.country].filter(Boolean).join(", ")}</span>
         </li>
@@ -507,6 +531,7 @@
       )
       .join("");
     suggestionsEl.hidden = false;
+    if (searchContainer) searchContainer.setAttribute("aria-expanded", "true");
   }
 
   searchInput.addEventListener("input", () => {
@@ -553,9 +578,13 @@
     } else {
       return;
     }
-    items.forEach((li, i) =>
-      li.setAttribute("aria-selected", i === activeIndex),
-    );
+    items.forEach((li, i) => {
+      const isSelected = i === activeIndex;
+      li.setAttribute("aria-selected", isSelected);
+      if (isSelected) {
+        li.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+    });
   });
 
   document.addEventListener("click", (e) => {
