@@ -70,20 +70,18 @@
     const sunIcon = themeToggle ? themeToggle.querySelector(".theme-icon-sun") : null;
     const moonIcon = themeToggle ? themeToggle.querySelector(".theme-icon-moon") : null;
 
+    if (autoIcon) autoIcon.toggleAttribute("hidden", theme !== "auto");
+    if (sunIcon) sunIcon.toggleAttribute("hidden", theme !== "light");
+    if (moonIcon) moonIcon.toggleAttribute("hidden", theme !== "dark");
+
     if (theme === "dark") {
       document.body.dataset.theme = "dark";
-      if (autoIcon) autoIcon.hidden = true;
-      if (sunIcon) sunIcon.hidden = true;
-      if (moonIcon) moonIcon.hidden = false;
       if (themeToggle) {
         themeToggle.title = "Theme: Dark Mode — Click to switch to Light Mode";
         themeToggle.setAttribute("aria-label", "Theme: Dark Mode. Click to switch to Light Mode");
       }
     } else if (theme === "light") {
       document.body.dataset.theme = "light";
-      if (autoIcon) autoIcon.hidden = true;
-      if (sunIcon) sunIcon.hidden = false;
-      if (moonIcon) moonIcon.hidden = true;
       if (themeToggle) {
         themeToggle.title = "Theme: Light Mode — Click to switch to Weather Sky Mode";
         themeToggle.setAttribute("aria-label", "Theme: Light Mode. Click to switch to Weather Sky Mode");
@@ -91,9 +89,6 @@
     } else {
       // Auto theme: remove data-theme so weather sky gradient takes full effect
       delete document.body.dataset.theme;
-      if (autoIcon) autoIcon.hidden = false;
-      if (sunIcon) sunIcon.hidden = true;
-      if (moonIcon) moonIcon.hidden = true;
       if (themeToggle) {
         themeToggle.title = "Theme: Weather Sky (Auto) — Click to switch to Dark Mode";
         themeToggle.setAttribute("aria-label", "Theme: Weather Sky Auto Mode. Click to switch to Dark Mode");
@@ -103,6 +98,12 @@
 
   if (themeToggle) {
     themeToggle.addEventListener("click", () => {
+      themeToggle.classList.add("theme-animating");
+      setTimeout(() => themeToggle.classList.remove("theme-animating"), 500);
+
+      document.body.classList.add("theme-transition");
+      setTimeout(() => document.body.classList.remove("theme-transition"), 600);
+
       if (currentTheme === "auto" || !currentTheme) {
         applyTheme("dark");
       } else if (currentTheme === "dark") {

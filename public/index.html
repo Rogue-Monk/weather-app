@@ -110,8 +110,11 @@
             stroke-linecap="round"
             stroke-linejoin="round"
           >
-            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-            <circle cx="12" cy="12" r="3" />
+            <path d="m14 4 6 6" />
+            <path d="m4 16 10-10" />
+            <path d="M2 22l5-5" />
+            <path d="M18 11.5l1.5 3 3 1.5-3 1.5-1.5 3-1.5-3-3-1.5 3-1.5z" />
+            <path d="M6 3.5l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" />
           </svg>
           <svg
             class="theme-icon theme-icon-sun"
@@ -193,14 +196,16 @@
             </div>
           </div>
 
-          <div class="panel">
-            <h2 class="panel-title">Hourly</h2>
-            <div class="hourly-strip" id="hourly-strip"></div>
-          </div>
+          <div class="panels-column">
+            <div class="panel">
+              <h2 class="panel-title">Hourly</h2>
+              <div class="hourly-strip" id="hourly-strip"></div>
+            </div>
 
-          <div class="panel">
-            <h2 class="panel-title">7-Day Forecast</h2>
-            <ul class="daily-list" id="daily-list"></ul>
+            <div class="panel">
+              <h2 class="panel-title">7-Day Forecast</h2>
+              <ul class="daily-list" id="daily-list"></ul>
+            </div>
           </div>
         </section>
       </main>
