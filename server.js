@@ -14,82 +14,7 @@ if (!API_KEY) {
   process.exit(1);
 }
 
-// ---------------------------------------------------------------------------
-// Weather code -> human-readable condition + icon
-// Open-Meteo returns WMO weather codes (numbers). This is the one translation
-// layer that turns "71" into something a person, or a UI, can use.
-// ---------------------------------------------------------------------------
-const WEATHER_CODES = {
-  0: { description: "Clear sky", icon: "clear", category: "clear" },
-  1: { description: "Mostly clear", icon: "partly-cloudy", category: "clear" },
-  2: {
-    description: "Partly cloudy",
-    icon: "partly-cloudy",
-    category: "cloudy",
-  },
-  3: { description: "Overcast", icon: "cloudy", category: "cloudy" },
-  45: { description: "Fog", icon: "fog", category: "fog" },
-  48: { description: "Depositing rime fog", icon: "fog", category: "fog" },
-  51: { description: "Light drizzle", icon: "drizzle", category: "rain" },
-  53: { description: "Moderate drizzle", icon: "drizzle", category: "rain" },
-  55: { description: "Dense drizzle", icon: "drizzle", category: "rain" },
-  56: {
-    description: "Light freezing drizzle",
-    icon: "drizzle",
-    category: "rain",
-  },
-  57: {
-    description: "Dense freezing drizzle",
-    icon: "drizzle",
-    category: "rain",
-  },
-  61: { description: "Slight rain", icon: "rain", category: "rain" },
-  63: { description: "Moderate rain", icon: "rain", category: "rain" },
-  65: { description: "Heavy rain", icon: "rain", category: "rain" },
-  66: { description: "Light freezing rain", icon: "rain", category: "rain" },
-  67: { description: "Heavy freezing rain", icon: "rain", category: "rain" },
-  71: { description: "Slight snow", icon: "snow", category: "snow" },
-  73: { description: "Moderate snow", icon: "snow", category: "snow" },
-  75: { description: "Heavy snow", icon: "snow", category: "snow" },
-  77: { description: "Snow grains", icon: "snow", category: "snow" },
-  80: { description: "Slight rain showers", icon: "rain", category: "rain" },
-  81: { description: "Moderate rain showers", icon: "rain", category: "rain" },
-  82: { description: "Violent rain showers", icon: "rain", category: "rain" },
-  85: { description: "Slight snow showers", icon: "snow", category: "snow" },
-  86: { description: "Heavy snow showers", icon: "snow", category: "snow" },
-  95: { description: "Thunderstorm", icon: "storm", category: "storm" },
-  96: {
-    description: "Thunderstorm with light hail",
-    icon: "storm",
-    category: "storm",
-  },
-  99: {
-    description: "Thunderstorm with heavy hail",
-    icon: "storm",
-    category: "storm",
-  },
-};
-
-function describeWeatherCode(code) {
-  return (
-    WEATHER_CODES[code] || {
-      description: "Unknown",
-      icon: "unknown",
-      category: "cloudy",
-    }
-  );
-}
-
-function clothingSuggestion(tempC, category) {
-  if (category === "storm")
-    return "Stay in if you can — thunderstorm conditions";
-  if (category === "snow") return "Bundle up, snow is falling";
-  if (category === "rain") return "Grab an umbrella, it's wet out there";
-  if (tempC < 5) return "Heavy coat weather";
-  if (tempC < 15) return "A jacket will do";
-  if (tempC < 25) return "Light layers are enough";
-  return "It's shorts weather";
-}
+const { describeWeatherCode, clothingSuggestion } = require("./public/weather-utils");
 
 // ---------------------------------------------------------------------------
 // Middleware
@@ -178,6 +103,53 @@ app.get(
 );
 
 // ---------------------------------------------------------------------------
+// GET /api/reverse-geocode?lat=&lon=
+// Resolves GPS coordinates into a human-readable city/region name.
+// ---------------------------------------------------------------------------
+app.get(
+  "/api/reverse-geocode",
+  asyncRoute(async (req, res) => {
+    const lat = parseFloat(req.query.lat);
+    const lon = parseFloat(req.query.lon);
+
+    if (
+      Number.isNaN(lat) ||
+      Number.isNaN(lon) ||
+      lat < -90 ||
+      lat > 90 ||
+      lon < -180 ||
+      lon > 180
+    ) {
+      return res
+        .status(400)
+        .json({ error: "lat and lon must be valid coordinates" });
+    }
+
+    try {
+      const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
+      const upstream = await fetchWithTimeout(url, 5000);
+
+      if (upstream.ok) {
+        const data = await upstream.json();
+        const city = data.city || data.locality || "";
+        const country = data.countryName || "";
+        const admin = data.principalSubdivision || "";
+
+        let name = city;
+        if (!name) name = admin || country || "Your location";
+        else if (country) name = `${city}, ${country}`;
+
+        return res.json({ name, city, country });
+      }
+    } catch (err) {
+      // Fallback if reverse geocode service fails
+    }
+
+    res.json({ name: "Your location" });
+  }),
+);
+
+// ---------------------------------------------------------------------------
 // GET /api/weather?lat=&lon=&name=
 // Fetches current + hourly + daily forecast and reshapes it into one clean,
 // UI-ready payload with human-readable conditions and a clothing suggestion.
@@ -237,14 +209,14 @@ app.get(
     // Find today's index in the daily arrays so "feels like" high/low match today.
     const todayIndex = 0;
 
-    // Build the next 12 hours of hourly data, starting from the current hour.
+    // Build the next 24 hours of hourly data, starting from the current hour.
     const nowIso = current.time;
     const startIdx = Math.max(
       0,
       data.hourly.time.findIndex((t) => t >= nowIso),
     );
     const hourly = data.hourly.time
-      .slice(startIdx, startIdx + 12)
+      .slice(startIdx, startIdx + 24)
       .map((t, i) => {
         const idx = startIdx + i;
         const info = describeWeatherCode(data.hourly.weathercode[idx]);

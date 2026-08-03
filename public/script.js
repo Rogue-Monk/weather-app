@@ -202,56 +202,11 @@
   // When running on GitHub Pages without a deployed Express server, GitHub Pages
   // returns 404 for `/api/...`. This fallback queries Open-Meteo APIs directly.
   // ---------------------------------------------------------------------
-  const WEATHER_CODES = {
-    0: { description: "Clear sky", icon: "clear", category: "clear" },
-    1: { description: "Mostly clear", icon: "partly-cloudy", category: "clear" },
-    2: { description: "Partly cloudy", icon: "partly-cloudy", category: "cloudy" },
-    3: { description: "Overcast", icon: "cloudy", category: "cloudy" },
-    45: { description: "Fog", icon: "fog", category: "fog" },
-    48: { description: "Depositing rime fog", icon: "fog", category: "fog" },
-    51: { description: "Light drizzle", icon: "drizzle", category: "rain" },
-    53: { description: "Moderate drizzle", icon: "drizzle", category: "rain" },
-    55: { description: "Dense drizzle", icon: "drizzle", category: "rain" },
-    56: { description: "Light freezing drizzle", icon: "drizzle", category: "rain" },
-    57: { description: "Dense freezing drizzle", icon: "drizzle", category: "rain" },
-    61: { description: "Slight rain", icon: "rain", category: "rain" },
-    63: { description: "Moderate rain", icon: "rain", category: "rain" },
-    65: { description: "Heavy rain", icon: "rain", category: "rain" },
-    66: { description: "Light freezing rain", icon: "rain", category: "rain" },
-    67: { description: "Heavy freezing rain", icon: "rain", category: "rain" },
-    71: { description: "Slight snow", icon: "snow", category: "snow" },
-    73: { description: "Moderate snow", icon: "snow", category: "snow" },
-    75: { description: "Heavy snow", icon: "snow", category: "snow" },
-    77: { description: "Snow grains", icon: "snow", category: "snow" },
-    80: { description: "Slight rain showers", icon: "rain", category: "rain" },
-    81: { description: "Moderate rain showers", icon: "rain", category: "rain" },
-    82: { description: "Violent rain showers", icon: "rain", category: "rain" },
-    85: { description: "Slight snow showers", icon: "snow", category: "snow" },
-    86: { description: "Heavy snow showers", icon: "snow", category: "snow" },
-    95: { description: "Thunderstorm", icon: "storm", category: "storm" },
-    96: { description: "Thunderstorm with light hail", icon: "storm", category: "storm" },
-    99: { description: "Thunderstorm with heavy hail", icon: "storm", category: "storm" },
+  const { describeWeatherCode, clothingSuggestion, parseLocalDate } = window.WeatherUtils || {
+    describeWeatherCode: (c) => ({ description: "Unknown", icon: "unknown", category: "cloudy" }),
+    clothingSuggestion: () => "Dress comfortably",
+    parseLocalDate: (d) => new Date(d),
   };
-
-  function describeWeatherCode(code) {
-    return (
-      WEATHER_CODES[code] || {
-        description: "Unknown",
-        icon: "unknown",
-        category: "cloudy",
-      }
-    );
-  }
-
-  function clothingSuggestion(tempC, category) {
-    if (category === "storm") return "Stay in if you can — thunderstorm conditions";
-    if (category === "snow") return "Bundle up, snow is falling";
-    if (category === "rain") return "Grab an umbrella, it's wet out there";
-    if (tempC < 5) return "Heavy coat weather";
-    if (tempC < 15) return "A jacket will do";
-    if (tempC < 25) return "Light layers are enough";
-    return "It's shorts weather";
-  }
 
   async function fallbackDirectOpenMeteo(path) {
     const dummyOrigin = "http://localhost";
@@ -272,6 +227,29 @@
         lon: r.longitude,
       }));
       return { results };
+    }
+
+    if (urlObj.pathname.endsWith("/reverse-geocode")) {
+      const lat = parseFloat(urlObj.searchParams.get("lat"));
+      const lon = parseFloat(urlObj.searchParams.get("lon"));
+      try {
+        const res = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const city = data.city || data.locality || "";
+          const country = data.countryName || "";
+          const admin = data.principalSubdivision || "";
+          let name = city;
+          if (!name) name = admin || country || "Your location";
+          else if (country) name = `${city}, ${country}`;
+          return { name, city, country };
+        }
+      } catch {
+        // Ignore network errors in fallback
+      }
+      return { name: "Your location" };
     }
 
     if (urlObj.pathname.endsWith("/weather")) {
@@ -302,7 +280,7 @@
 
       const nowIso = current.time;
       const startIdx = Math.max(0, data.hourly.time.findIndex((t) => t >= nowIso));
-      const hourly = data.hourly.time.slice(startIdx, startIdx + 12).map((t, i) => {
+      const hourly = data.hourly.time.slice(startIdx, startIdx + 24).map((t, i) => {
         const idx = startIdx + i;
         const info = describeWeatherCode(data.hourly.weathercode[idx]);
         return {
@@ -435,10 +413,11 @@
     dailyList.innerHTML = "";
     daily.forEach((d, i) => {
       const el = document.createElement("li");
+      const dateObj = parseLocalDate(d.date);
       const dayName =
         i === 0
           ? "Today"
-          : new Date(d.date).toLocaleDateString("en-US", { weekday: "short" });
+          : dateObj.toLocaleDateString("en-US", { weekday: "short" });
       el.innerHTML = `
         <span class="day-name">${dayName}</span>
         <span class="day-icon">${iconFor(d.icon, true)}</span>
@@ -609,10 +588,23 @@
     }
     locateBtn.classList.add("locating");
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        let placeName = "Your location";
+
+        try {
+          const geoRes = await apiFetch(`/api/reverse-geocode?lat=${lat}&lon=${lon}`);
+          if (geoRes && geoRes.name) {
+            placeName = geoRes.name;
+          }
+        } catch (err) {
+          // If reverse geocoding fails, fallback gracefully to "Your location"
+        }
+
         locateBtn.classList.remove("locating");
         searchInput.value = "";
-        loadWeather(pos.coords.latitude, pos.coords.longitude, "Your location");
+        loadWeather(lat, lon, placeName);
       },
       () => {
         locateBtn.classList.remove("locating");
