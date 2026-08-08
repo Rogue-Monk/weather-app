@@ -5,9 +5,8 @@
  * background backdrop state assignment, weather icon rendering, and DOM updates.
  */
 
-import WeatherUtilsModule from "../weather-utils.js";
-
-const WeatherUtils = window.WeatherUtils || WeatherUtilsModule || {
+// Ensure WeatherUtils is accessible from global window scope (loaded via script tag in index.html)
+const WeatherUtils = (typeof window !== "undefined" && window.WeatherUtils) || {
   parseLocalDate: (d) => new Date(d),
 };
 

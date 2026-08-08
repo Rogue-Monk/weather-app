@@ -5,10 +5,8 @@
  * and performing client-side direct Open-Meteo fallback when running on static hosts.
  */
 
-import WeatherUtilsModule from "../weather-utils.js";
-
-// Ensure WeatherUtils is accessible regardless of module loading context
-const WeatherUtils = window.WeatherUtils || WeatherUtilsModule || {
+// Ensure WeatherUtils is accessible from global window scope (loaded via script tag in index.html)
+const WeatherUtils = (typeof window !== "undefined" && window.WeatherUtils) || {
   describeWeatherCode: (c) => ({ description: "Unknown", icon: "unknown", category: "cloudy" }),
   clothingSuggestion: () => "Dress comfortably",
   parseLocalDate: (d) => new Date(d),
