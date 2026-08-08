@@ -22,6 +22,12 @@ const { describeWeatherCode, clothingSuggestion } = require("./public/weather-ut
 app.use(cors());
 app.use(express.json());
 
+const crypto = require("crypto");
+
+// Active ephemeral session tokens issued for browser clients
+const validSessionTokens = new Set();
+setInterval(() => validSessionTokens.clear(), 60 * 60 * 1000);
+
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100,
@@ -34,10 +40,10 @@ function requireAuth(req, res, next) {
   const authHeader = req.headers["authorization"] || "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
-  if (!token || token !== API_KEY) {
+  if (!token || (token !== API_KEY && !validSessionTokens.has(token))) {
     return res
       .status(401)
-      .json({ error: "Unauthorized — missing or invalid API key" });
+      .json({ error: "Unauthorized — missing or invalid API key or session token" });
   }
   next();
 }
@@ -63,6 +69,18 @@ async function fetchWithTimeout(url, ms = 8000) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// GET /api/token
+// Returns an ephemeral session token for browser frontend clients without
+// exposing static API secrets in client-side code.
+// ---------------------------------------------------------------------------
+app.get("/api/token", apiLimiter, (req, res) => {
+  const sessionToken = "session_" + crypto.randomBytes(16).toString("hex");
+  validSessionTokens.add(sessionToken);
+  res.json({ token: sessionToken });
+});
+
+// Protect all remaining /api routes with rate limiting and authentication
 app.use("/api", apiLimiter, requireAuth);
 
 // ---------------------------------------------------------------------------
